@@ -1,0 +1,28 @@
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+backend/.env
+
+# --- Python ---
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# --- Local databases ---
+*.db
+backend/knowledge.db
+
+# --- Node ---
+node_modules/
+dist/
+build/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
