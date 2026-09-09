@@ -1,0 +1,71 @@
+# AI Customer Support Knowledge Assistant
+
+A Retrieval-Augmented Generation (RAG) system that lets a company upload its documents once, then allows employees and/or customers to ask natural-language questions and get accurate, cited answers pulled from that company's own knowledge base — not from general internet knowledge.
+
+See [`PRD_AI_Customer_Support_Knowledge_Assistant.md`](./PRD_AI_Customer_Support_Knowledge_Assistant.md) for the full product spec and [`projectmap.md`](./projectmap.md) for the codebase layout.
+
+## Project structure
+
+```
+backend/    FastAPI backend (API, auth, RAG pipeline, DB models)
+frontend/   Admin/dashboard app (scaffolded, in progress)
+widget/     Embeddable chat widget (scaffolded, in progress)
+docs/       Additional documentation
+infra/      Deployment/infra config
+scripts/    Utility scripts
+```
+
+## Backend setup
+
+**Prerequisites:** Python 3.11+ and pip.
+
+```bash
+cd backend
+
+# create and activate a virtual environment
+python -m venv venv
+source venv/Scripts/activate   # Git Bash on Windows
+# venv\Scripts\activate.bat    # cmd.exe
+# venv\Scripts\Activate.ps1    # PowerShell
+
+# install dependencies
+pip install -r requirements.txt
+
+# configure environment variables
+cp .env.example .env
+```
+
+Then open `backend/.env` and fill in your own values:
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | DB connection string. Defaults to local SQLite (`sqlite:///./knowledge.db`); use a Postgres URL (with `pgvector`) for production. |
+| `LLM_PROVIDER` | Which LLM provider to use: `openai`, `gemini`, or `groq`. |
+| `OPENAI_API_KEY` | Required if `LLM_PROVIDER=openai`. |
+| `GEMINI_API_KEY` | Required if `LLM_PROVIDER=gemini`. |
+| `GROQ_API_KEY` | Required if `LLM_PROVIDER=groq`. |
+| `SECRET_KEY` | Secret used to sign auth tokens — generate a random string, don't reuse examples. |
+| `ALGORITHM` | JWT signing algorithm (default `HS256`). |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Auth token lifetime in minutes. |
+| `DEBUG` | `True`/`False` — enables FastAPI debug behavior. |
+| `ALLOWED_ORIGINS` | JSON list of origins allowed by CORS, e.g. `["http://localhost:3000"]`. |
+
+**Never commit `.env`** — it's already listed in `.gitignore`. Use `.env.example` as the template for what needs to be set.
+
+Run the API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+- API root: http://localhost:8000
+- Interactive docs (Swagger UI): http://localhost:8000/docs
+- Health check: http://localhost:8000/health
+
+## Frontend / widget
+
+`frontend/` and `widget/` are scaffolded but not yet implemented — setup instructions will be added here once they have a build (e.g. `package.json`) to install.
+
+## Contributing
+
+Standard flow: create a branch, make your changes, commit, and push. Keep secrets out of commits — only `.env.example` files should ever be tracked, never `.env` itself.
