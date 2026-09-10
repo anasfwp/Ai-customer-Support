@@ -45,6 +45,22 @@ async def query_question(
         question=request.question
     )
     
+    # Log the chat to database
+    from app.db.models.chat_log import ChatLog
+    chat_log = ChatLog(
+        id=str(uuid.uuid4()),
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        question=request.question,
+        answer=result["answer"],
+        citations=result.get("citations", []),
+        confidence=str(result.get("confidence", 0.0)),
+        fallback=result.get("fallback", True),
+        session_id=session_id
+    )
+    db.add(chat_log)
+    db.commit()
+    
     return ChatResponse(
         answer=result["answer"],
         citations=result.get("citations", []),
@@ -63,8 +79,7 @@ async def get_chat_history(
     from app.db.models.chat_log import ChatLog
     
     logs = db.query(ChatLog).filter(
-        ChatLog.tenant_id == current_user.tenant_id,
-        ChatLog.user_id == current_user.id
+        ChatLog.tenant_id == current_user.tenant_id
     ).order_by(ChatLog.created_at.desc()).limit(limit).all()
     
     return [
@@ -73,6 +88,9 @@ async def get_chat_history(
             "question": log.question,
             "answer": log.answer,
             "citations": log.citations,
+            "confidence": log.confidence,
+            "fallback": log.fallback,
+            "session_id": log.session_id,
             "created_at": log.created_at
         }
         for log in logs

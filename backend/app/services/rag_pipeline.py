@@ -36,8 +36,6 @@ class RAGPipeline:
             
             # Generate embedding for the question
             question_embedding = self.embedding_service.embed_texts([question])[0]
-            
-            # Convert to numpy arrays for calculation
             question_vec = np.array(question_embedding)
             
             # Calculate similarities
@@ -45,50 +43,54 @@ class RAGPipeline:
             for chunk in chunks:
                 if chunk.embedding is not None:
                     chunk_vec = np.array(chunk.embedding)
-                    # Calculate cosine similarity
                     dot_product = np.dot(question_vec, chunk_vec)
                     norm_q = np.linalg.norm(question_vec)
                     norm_c = np.linalg.norm(chunk_vec)
                     if norm_q > 0 and norm_c > 0:
                         sim = dot_product / (norm_q * norm_c)
                         similarities.append((chunk, float(sim)))
-                    else:
-                        similarities.append((chunk, 0.0))
             
-            # Sort by similarity (highest first)
+            # Sort by similarity
             similarities.sort(key=lambda x: x[1], reverse=True)
             
-            # Get top 3 chunks with similarity > 0.3 (lowered threshold for testing)
+            # Log top similarities for debugging
+            logger.info(f"Top similarities: {[(s[1], s[0].chunk_metadata.get('filename', 'unknown')) for s in similarities[:5]]}")
+            
+            # LOWER THRESHOLD: Use 0.2 instead of 0.5
             top_chunks = []
-            for chunk, sim in similarities[:3]:
-                if sim > 0.3:
+            for chunk, sim in similarities[:5]:
+                if sim > 0.2:  # Lowered threshold
                     top_chunks.append((chunk, sim))
             
             if not top_chunks:
                 return {
-                    "answer": "I couldn't find relevant information in your documents. Try asking about skills, experience, or education mentioned in the resume.",
+                    "answer": "I couldn't find relevant information in your documents.",
                     "citations": [],
                     "confidence": 0.0,
                     "fallback": True
                 }
             
-            # Build context from top chunks
-            context = [chunk.content for chunk, _ in top_chunks]
+            # Build context from top chunks (use more chunks)
+            context = [chunk.content for chunk, _ in top_chunks[:3]]
             
             # Generate answer using LLM
             answer = self.llm_provider.generate_answer(question, context)
             
-            # Build citations
+            # Build citations (deduplicated)
+            seen_docs = set()
             citations = []
             for chunk, sim in top_chunks:
                 metadata = chunk.chunk_metadata or {}
-                citations.append({
-                    "document_id": metadata.get('document_id', 'unknown'),
-                    "document_name": metadata.get('filename', 'Unknown Document'),
-                    "section": metadata.get('section', ''),
-                    "page": metadata.get('page', 1),
-                    "similarity": sim
-                })
+                doc_id = metadata.get('document_id', 'unknown')
+                if doc_id not in seen_docs:
+                    seen_docs.add(doc_id)
+                    citations.append({
+                        "document_id": doc_id,
+                        "document_name": metadata.get('filename', 'Unknown Document'),
+                        "section": metadata.get('section', ''),
+                        "page": metadata.get('page', 1),
+                        "similarity": sim
+                    })
             
             return {
                 "answer": answer,

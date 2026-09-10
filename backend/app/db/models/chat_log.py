@@ -1,39 +1,18 @@
-@router.post("/query", response_model=ChatResponse)
-async def query_question(
-    request: ChatRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Answer a question using RAG"""
-    session_id = request.session_id or str(uuid.uuid4())
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, JSON, Boolean
+from sqlalchemy.sql import func
+from app.db.base import Base
+import uuid
+
+class ChatLog(Base):
+    __tablename__ = "chat_logs"
     
-    # Use the RAG pipeline to answer the question
-    pipeline = RAGPipeline()
-    result = pipeline.answer_question(
-        db=db,
-        tenant_id=current_user.tenant_id,
-        question=request.question
-    )
-    
-    # Log the chat to database
-    from app.db.models.chat_log import ChatLog
-    chat_log = ChatLog(
-        id=str(uuid.uuid4()),
-        tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
-        question=request.question,
-        answer=result["answer"],
-        citations=result.get("citations", []),
-        confidence=str(result.get("confidence", 0.0)),
-        fallback=result.get("fallback", True)
-    )
-    db.add(chat_log)
-    db.commit()
-    
-    return ChatResponse(
-        answer=result["answer"],
-        citations=result.get("citations", []),
-        confidence=result.get("confidence", 0.0),
-        fallback=result.get("fallback", True),
-        session_id=session_id
-    )
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String, ForeignKey("tenants.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    citations = Column(JSON, default=[])
+    confidence = Column(String, nullable=True)
+    fallback = Column(Boolean, default=False)
+    session_id = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
