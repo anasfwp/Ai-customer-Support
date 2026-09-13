@@ -67,22 +67,47 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 async def on_startup():
     """Create tables (and the pgvector extension, if on Postgres) if they
     don't already exist. This project has no Alembic migrations yet, so
-    this keeps a fresh deploy (e.g. on Render) usable out of the box."""
-    try:
-        if engine.dialect.name == "postgresql":
-            with engine.connect() as conn:
-                from sqlalchemy import text
+    this keeps a fresh deploy (e.g. on Render) usable out of the box.
 
+    The pgvector extension and the `chunks` table (the only one that
+    depends on it) are created in their own try/except, deliberately
+    separate from the rest of the schema. Postgres aborts an entire
+    transaction on the first failing statement, so if the extension
+    isn't permitted on a given plan and this were all one block, *no*
+    tables would get created - including unrelated ones like `users` and
+    `tenants` - taking down the whole app instead of just RAG search.
+    """
+    from sqlalchemy import text
+    from app.db.models import tenant, user, document, chunk, chat_log, feedback  # noqa: F401
+
+    vector_ready = True
+    if engine.dialect.name == "postgresql":
+        try:
+            with engine.connect() as conn:
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                 conn.commit()
+        except Exception:
+            vector_ready = False
+            logger.exception(
+                "Could not create the pgvector extension - check that your Postgres "
+                "plan permits CREATE EXTENSION. Continuing without it; document "
+                "upload/chat will not work until this is resolved."
+            )
 
-        # Import models so they're registered on Base.metadata before create_all
-        from app.db.models import tenant, user, document, chunk, chat_log, feedback  # noqa: F401
-
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables verified/created successfully")
+    core_tables = [t for name, t in Base.metadata.tables.items() if name != "chunks"]
+    try:
+        Base.metadata.create_all(bind=engine, tables=core_tables)
+        logger.info("Core database tables verified/created successfully")
     except Exception:
-        logger.exception("Database initialization failed on startup")
+        logger.exception("Core database table creation failed on startup")
+        return
+
+    if vector_ready:
+        try:
+            Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["chunks"]])
+            logger.info("chunks table (pgvector) verified/created successfully")
+        except Exception:
+            logger.exception("chunks table creation failed on startup")
 
 
 # Include routers
