@@ -1,18 +1,31 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
 from app.core.deps import get_current_user
+from app.core.limiter import limiter
 from app.db.models.user import User
 from app.services.rag_pipeline import RAGPipeline
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import uuid
 from typing import Optional, List
 
 router = APIRouter()
 
+MAX_QUESTION_LENGTH = 2000
+
 class ChatRequest(BaseModel):
     question: str
     session_id: Optional[str] = None
+
+    @field_validator("question")
+    @classmethod
+    def question_not_blank(cls, v):
+        v = v.strip()
+        if not v:
+            raise ValueError("Question cannot be empty")
+        if len(v) > MAX_QUESTION_LENGTH:
+            raise ValueError(f"Question must be at most {MAX_QUESTION_LENGTH} characters")
+        return v
 
 class ChatResponse(BaseModel):
     answer: str
@@ -29,20 +42,27 @@ def get_db():
         db.close()
 
 @router.post("/query", response_model=ChatResponse)
+@limiter.limit("20/minute")
 async def query_question(
-    request: ChatRequest,
+    request: Request,
+    chat_request: ChatRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Answer a question using RAG"""
-    session_id = request.session_id or str(uuid.uuid4())
-    
+    session_id = chat_request.session_id or str(uuid.uuid4())
+
     # Use the RAG pipeline to answer the question
-    pipeline = RAGPipeline()
+    try:
+        pipeline = RAGPipeline()
+    except ValueError as e:
+        # Provider not configured (e.g. missing/placeholder API key)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+
     result = pipeline.answer_question(
         db=db,
         tenant_id=current_user.tenant_id,
-        question=request.question
+        question=chat_request.question
     )
     
     # Log the chat to database
@@ -51,7 +71,7 @@ async def query_question(
         id=str(uuid.uuid4()),
         tenant_id=current_user.tenant_id,
         user_id=current_user.id,
-        question=request.question,
+        question=chat_request.question,
         answer=result["answer"],
         citations=result.get("citations", []),
         confidence=str(result.get("confidence", 0.0)),

@@ -8,11 +8,14 @@ from app.db.models.chunk import Chunk
 from app.services.document_parser import DocumentParser
 from app.services.chunker import Chunker
 from app.services.embedding_service import EmbeddingService
+from app.config import settings
 import uuid
 import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+MAX_UPLOAD_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 def get_db():
     db = SessionLocal()
@@ -30,13 +33,32 @@ async def upload_document(
     """Upload a document for processing"""
     # Validate file type
     allowed_extensions = ['.pdf', '.docx', '.txt']
+    if not file.filename or '.' not in file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must have a name with an extension"
+        )
     file_ext = '.' + file.filename.split('.')[-1].lower()
     if file_ext not in allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File type {file_ext} not supported. Allowed: {allowed_extensions}"
         )
-    
+
+    # Read file content, enforcing a size cap so a huge upload can't
+    # exhaust server memory (this loads the whole file into RAM below).
+    content = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
+    if len(content) > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds the {settings.MAX_UPLOAD_SIZE_MB}MB upload limit"
+        )
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty"
+        )
+
     # Create document record
     doc_id = str(uuid.uuid4())
     document = Document(
@@ -47,10 +69,8 @@ async def upload_document(
     )
     db.add(document)
     db.commit()
-    
+
     try:
-        # Read file content
-        content = await file.read()
         parser = DocumentParser()
         chunker = Chunker()
         
@@ -108,12 +128,12 @@ async def upload_document(
         }
         
     except Exception as e:
-        logger.error(f"Document processing error: {e}")
+        logger.error(f"Document processing error for document {doc_id}: {e}", exc_info=True)
         document.status = DocumentStatus.FAILED
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process document: {str(e)}"
+            detail="Failed to process document. Please check the file and try again."
         )
 
 @router.get("/")

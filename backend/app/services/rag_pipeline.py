@@ -100,9 +100,9 @@ class RAGPipeline:
             }
             
         except Exception as e:
-            logger.error(f"RAG pipeline error: {e}", exc_info=True)
+            logger.error(f"RAG pipeline error for tenant {tenant_id}: {e}", exc_info=True)
             return {
-                "answer": f"I encountered an error processing your question: {str(e)}",
+                "answer": "I encountered an error processing your question. Please try again.",
                 "citations": [],
                 "confidence": 0.0,
                 "fallback": True
