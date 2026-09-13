@@ -62,9 +62,22 @@ uvicorn app.main:app --reload
 - Interactive docs (Swagger UI): http://localhost:8000/docs
 - Health check: http://localhost:8000/health
 
-## Frontend / widget
+## Frontend setup
 
-`frontend/` and `widget/` are scaffolded but not yet implemented — setup instructions will be added here once they have a build (e.g. `package.json`) to install.
+**Prerequisites:** Node.js 18+.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # only needed for a production build; local dev proxies to localhost:8000 automatically
+npm run dev
+```
+
+- App: http://localhost:5173
+
+## Deploying to Render
+
+See [`DEPLOY.md`](./DEPLOY.md) for a step-by-step guide to deploying the backend, frontend, and a managed Postgres database using the included `render.yaml` Blueprint.
 
 ## Contributing
 
