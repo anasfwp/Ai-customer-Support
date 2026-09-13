@@ -15,20 +15,22 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DEBUG: bool = False
     MAX_UPLOAD_SIZE_MB: int = 10
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    # Kept as a plain string (not List[str]) on purpose: pydantic-settings
+    # tries to JSON-decode any env var bound to a list-typed field *before*
+    # field validators run, so a plain value like
+    # "https://app.onrender.com" (valid, easy to paste in Render's UI) would
+    # blow up at the settings-source level with a SettingsError, never
+    # reaching our own parsing logic below. See `allowed_origins_list`.
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_allowed_origins(cls, v):
+    @property
+    def allowed_origins_list(self) -> List[str]:
         # Accept either a JSON list (`["https://a.com","https://b.com"]`) or a
-        # plain comma-separated string (`https://a.com,https://b.com`) - the
-        # latter is much easier to paste into Render's env var UI.
-        if isinstance(v, str):
-            v = v.strip()
-            if v.startswith("["):
-                return json.loads(v)
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        # plain comma-separated string (`https://a.com,https://b.com`).
+        v = self.ALLOWED_ORIGINS.strip()
+        if v.startswith("["):
+            return json.loads(v)
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
 
     @field_validator("SECRET_KEY")
     @classmethod
