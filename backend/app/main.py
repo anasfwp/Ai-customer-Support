@@ -58,9 +58,22 @@ async def add_security_headers(request: Request, call_next):
 async def unhandled_exception_handler(request: Request, exc: Exception):
     """Never leak internal exception details (stack traces, library
     error text, file paths, etc.) to API clients - log them server-side
-    instead and return a generic message."""
+    instead and return a generic message.
+
+    Handlers registered for the bare `Exception` class run inside
+    Starlette's ServerErrorMiddleware, which wraps *outside*
+    CORSMiddleware - so this response would otherwise skip CORS
+    entirely and the browser would report a confusing "blocked by CORS
+    policy" error that has nothing to do with CORS. Add the same header
+    CORSMiddleware would have added, by hand.
+    """
     logger.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
-    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    response = JSONResponse(status_code=500, content={"detail": "Internal server error"})
+    origin = request.headers.get("origin")
+    if origin and origin in settings.allowed_origins_list:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 
 @app.on_event("startup")
