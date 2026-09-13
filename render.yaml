@@ -35,11 +35,13 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
-      # Update this after the frontend's first deploy to match its actual
-      # onrender.com URL (or your custom domain) - comma-separate multiple
-      # origins, e.g. "https://a.onrender.com,https://app.example.com".
+      # sync: false so a Blueprint re-sync never overwrites your real
+      # frontend URL back to this placeholder. Set the real value once in
+      # the Render dashboard (Environment tab) after the frontend's first
+      # deploy - comma-separate multiple origins, e.g.
+      # "https://a.onrender.com,https://app.example.com".
       - key: ALLOWED_ORIGINS
-        value: https://ai-support-frontend.onrender.com
+        sync: false
 
   # --- Frontend (static Vite build) ---
   - type: web
@@ -49,10 +51,14 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
-      # Update this after the backend's first deploy to match its actual
-      # onrender.com URL.
+      # sync: false so a Blueprint re-sync never overwrites your real
+      # backend URL back to this placeholder. Set the real value once in
+      # the Render dashboard (Environment tab) after the backend's first
+      # deploy, then trigger a manual redeploy of this service - Vite
+      # bakes env vars in at build time, so a restart alone won't pick up
+      # a later change.
       - key: VITE_API_BASE_URL
-        value: https://ai-support-backend.onrender.com
+        sync: false
     routes:
       # React Router uses client-side routing; without this, refreshing on
       # e.g. /chat or /documents returns a 404 from the static host.
