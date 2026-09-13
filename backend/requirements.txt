@@ -11,6 +11,12 @@ python-multipart==0.0.20
 alembic==1.15.1
 python-jose[cryptography]==3.4.0
 passlib[bcrypt]==1.7.4
+# Pinned explicitly: passlib 1.7.4 predates bcrypt 4.1+, which removed the
+# `__about__.__version__` attribute passlib's bcrypt handler reads. Without
+# this pin, a fresh install can resolve an incompatible bcrypt and either
+# crash on every password hash/verify call, or silently truncate hashing
+# behavior. 4.0.1 is the latest release that still has `__about__`.
+bcrypt==4.0.1
 langchain==0.3.15
 langchain-community==0.3.15
 langchain-openai==0.3.6
