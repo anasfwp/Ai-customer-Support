@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { authApi } from '../api/auth';
-import { tokenStorage } from '../api/client';
+import { sessionNotice, tokenStorage } from '../api/client';
 
 interface AuthUser {
   email: string;
@@ -42,6 +42,14 @@ function userFromToken(token: string | null): AuthUser | null {
   const tenantId = typeof payload.tenant_id === 'string' ? payload.tenant_id : '';
 
   if (!email || !tenantId) return null;
+
+  // Treat an expired token as signed out instead of showing the app until the
+  // first API call fails with a 401.
+  if (typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now()) {
+    tokenStorage.clear();
+    sessionNotice.flagExpired();
+    return null;
+  }
   return { email, tenantId };
 }
 

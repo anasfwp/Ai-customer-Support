@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, Mail, Lock, ArrowRight } from 'lucide-react';
@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { errorMessage } from '../api/client';
+import { errorMessage, sessionNotice } from '../api/client';
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
@@ -15,6 +15,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [sessionExpired] = useState(() => sessionNotice.consumeExpired());
+  const [slow, setSlow] = useState(false);
+
+  // The free Render backend sleeps when idle; the first request can take a
+  // while, so tell the user it is waking up instead of leaving a bare spinner.
+  useEffect(() => {
+    if (!isLoading) {
+      setSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -151,6 +164,12 @@ export default function LoginPage() {
               />
             </div>
 
+            {sessionExpired && !error && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+                Your session expired. Please sign in again.
+              </div>
+            )}
+
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
                 {error}
@@ -161,6 +180,12 @@ export default function LoginPage() {
               Sign in
               {!isLoading && <ArrowRight className="h-4 w-4" />}
             </Button>
+
+            {slow && (
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+                The server is waking up, this can take up to a minute…
+              </p>
+            )}
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">

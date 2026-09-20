@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 const TOKEN_KEY = 'access_token';
+const SESSION_EXPIRED_KEY = 'session_expired';
 
 /**
  * In development, Vite proxies /api to http://localhost:8000.
@@ -26,6 +27,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      if (localStorage.getItem(TOKEN_KEY)) sessionNotice.flagExpired();
       localStorage.removeItem(TOKEN_KEY);
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
@@ -40,7 +42,15 @@ apiClient.interceptors.response.use(
  */
 export function errorMessage(error: unknown, fallback = 'Something went wrong'): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as Record<string, unknown> | undefined;
+    if (error.response?.status === 429) {
+      return 'Too many attempts. Please wait a minute and try again.';
+    }
+    if (!error.response) {
+      return error.code === 'ECONNABORTED'
+        ? 'The server took too long to respond. Please try again.'
+        : 'Cannot reach the server. Check your connection and try again.';
+    }
+    const data = error.response.data as Record<string, unknown> | undefined;
     if (typeof data?.detail === 'string') return data.detail;
     if (typeof data?.message === 'string') return data.message;
     if (Array.isArray(data?.detail) && data.detail.length > 0) {
@@ -51,6 +61,30 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong'):
   }
   return error instanceof Error ? error.message : fallback;
 }
+
+/**
+ * One-shot flag so the login page can explain why the user was signed out.
+ * sessionStorage can throw (private mode / blocked storage), so never let it
+ * break the auth flow.
+ */
+export const sessionNotice = {
+  flagExpired: () => {
+    try {
+      sessionStorage.setItem(SESSION_EXPIRED_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  },
+  consumeExpired: (): boolean => {
+    try {
+      const flagged = sessionStorage.getItem(SESSION_EXPIRED_KEY) === '1';
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+      return flagged;
+    } catch {
+      return false;
+    }
+  },
+};
 
 export const tokenStorage = {
   get: () => localStorage.getItem(TOKEN_KEY),

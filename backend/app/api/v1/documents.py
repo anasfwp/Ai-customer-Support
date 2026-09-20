@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_admin
 from app.db.models.user import User
 from app.db.models.document import Document, DocumentStatus
 from app.db.models.chunk import Chunk
@@ -160,7 +160,7 @@ async def list_documents(
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Delete a document and all its chunks"""

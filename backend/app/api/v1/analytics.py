@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.base import SessionLocal
-from app.core.deps import get_current_user
+from app.core.deps import require_admin
 from app.db.models.user import User
 from app.db.models.chat_log import ChatLog
 from app.db.models.document import Document
@@ -19,7 +19,7 @@ def get_db():
 
 @router.get("/usage")
 async def get_usage_stats(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Get usage statistics"""
@@ -59,7 +59,7 @@ async def get_usage_stats(
 
 @router.get("/unanswered")
 async def get_unanswered_questions(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Get questions that couldn't be answered (content gaps)"""

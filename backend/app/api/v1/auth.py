@@ -13,6 +13,10 @@ router = APIRouter()
 
 MIN_PASSWORD_LENGTH = 8
 
+# Verified against when the email doesn't exist, so an unknown account costs
+# the same bcrypt time as a wrong password (no timing-based user enumeration).
+_DUMMY_HASH = get_password_hash("timing-equalizer")
+
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -88,7 +92,10 @@ async def register(request: Request, user_data: UserRegister, db: Session = Depe
 @limiter.limit("10/minute")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    password_ok = verify_password(
+        form_data.password, user.hashed_password if user else _DUMMY_HASH
+    )
+    if not user or not password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
