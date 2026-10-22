@@ -1,0 +1,34 @@
+Troubleshooting and Error Codes
+
+How to Use This Guide
+When something goes wrong, the app shows an error code that starts with ERR. Find the code below for the cause and the fix. If the problem continues, contact support with the code and the time it happened.
+
+ERR-1001: Network Unreachable
+The app cannot connect to our servers. Check your internet connection, disable any VPN or proxy, and try again. Corporate firewalls must allow outbound traffic to api.company.com on port 443.
+
+ERR-2003: Sync Conflict
+The same file was edited on two devices before either finished syncing. The app keeps both versions and renames the newer one with the suffix "(conflict copy)". Open both files, merge the changes, and delete the copy you do not need.
+
+ERR-3050: Storage Quota Exceeded
+Your account has reached the storage limit for its plan. New uploads are blocked until you delete files, empty the trash, or upgrade. Files in the trash still count toward your quota for 30 days.
+
+ERR-4012: Session Token Expired
+Your login session has expired, usually after 30 minutes of inactivity. Sign in again to continue. If this error appears right after signing in, check that your device clock is set to update automatically.
+
+ERR-4031: Permission Denied
+You do not have access to this project or file. Ask the project owner or an admin to add you as a member with Editor or Viewer access.
+
+ERR-5002: Payment Declined
+Your card was declined when renewing the subscription. Update your payment method under Settings > Billing within 7 days to avoid the account being downgraded to Starter.
+
+ERR-6100: Upload Too Large
+A single file cannot be larger than 5 GB on Starter or Pro, or 50 GB on Enterprise. Compress the file or split it into smaller parts before uploading.
+
+App Will Not Start
+On Windows, reinstall the desktop app after deleting the folder %APPDATA%\CompanyCloud. On macOS, delete ~/Library/Application Support/CompanyCloud and reinstall. Your files are stored in the cloud and will sync again after you sign in.
+
+Slow Sync
+Sync speed is limited by your upload bandwidth. You can raise the bandwidth cap under Preferences > Network, where the default limit is 10 MB/s. Pausing and resuming sync can also clear a stuck queue.
+
+Collecting Logs for Support
+Open Help > Export Diagnostics to create a zip file of the app logs. Logs never include file contents. Attach the zip file to your support ticket.

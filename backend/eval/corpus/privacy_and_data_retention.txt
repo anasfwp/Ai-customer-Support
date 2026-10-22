@@ -1,0 +1,31 @@
+Privacy and Data Retention
+
+What We Collect
+We collect your account details such as name and email, the files you upload, billing information, and usage data such as features used and device type. We never sell personal data to third parties.
+
+How We Use Data
+Data is used to provide the service, process payments, prevent fraud, and improve the product. We do not use the contents of your files to train machine learning models.
+
+Data Location
+Customer data is stored in data centers in the United States by default. Enterprise customers can choose EU data residency, which keeps all files and backups in Frankfurt, Germany.
+
+Retention After Deletion
+Deleted files stay in the trash for 30 days and can be restored during that time. After 30 days they are permanently deleted. Backups containing deleted data are overwritten within a further 35 days.
+
+Closing Your Account
+When you close your account, your files are kept for 90 days in case you change your mind, and then permanently deleted. Billing records are kept for 7 years to meet tax law requirements.
+
+Exporting Your Data
+You can download a full export of your files and account data at any time from Settings > Privacy > Export Data. Exports are prepared as a zip file and the download link is emailed to you within 24 hours.
+
+GDPR and CCPA Requests
+Residents of the EU and California can request access to, correction of, or deletion of their personal data by emailing privacy@company.com. We respond to verified requests within 30 days.
+
+Cookies
+The website uses essential cookies for sign-in and optional analytics cookies. You can turn off analytics cookies in the cookie banner or under Settings > Privacy at any time.
+
+Subprocessors
+We use a small number of subprocessors, including cloud hosting and payment processing providers. The full list is published at company.com/subprocessors and customers are notified 30 days before a new subprocessor is added.
+
+Children
+The service is not intended for children under 16, and we do not knowingly collect data from them.

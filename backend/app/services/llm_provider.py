@@ -2,7 +2,9 @@ from openai import OpenAI
 import google.generativeai as genai
 from groq import Groq
 from app.config import settings
-from typing import List
+from typing import Iterator, List
+
+SYSTEM_PROMPT = "You are a helpful assistant. Answer based ONLY on the provided context. If you cannot answer from the context, say I dont know."
 
 class LLMProvider:
     def __init__(self):
@@ -28,46 +30,33 @@ class LLMProvider:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
     
     def generate_answer(self, question: str, context: List[str]) -> str:
+        return "".join(self.stream_answer(question, context))
+    
+    def stream_answer(self, question: str, context: List[str]) -> Iterator[str]:
         if not context:
-            return "I couldn't find relevant information in the documentation."
-        
-        prompt = self._build_prompt(question, context)
-        
-        if self.provider == "openai":
-            return self._openai_generate(prompt)
-        elif self.provider == "gemini":
-            return self._gemini_generate(prompt)
-        elif self.provider == "groq":
-            return self._groq_generate(prompt)
-        else:
-            return "No valid LLM provider configured."
+            yield "I couldn't find relevant information in the documentation."
+            return
+        yield from self.stream(self._build_prompt(question, context))
     
-    def _openai_generate(self, prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant. Answer based ONLY on the provided context. If you cannot answer from the context, say I dont know."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3
-        )
-        return response.choices[0].message.content
-    
-    def _gemini_generate(self, prompt: str) -> str:
-        model = self.client.GenerativeModel(self.model)
-        response = model.generate_content(prompt)
-        return response.text
-    
-    def _groq_generate(self, prompt: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant. Answer based ONLY on the provided context. If you cannot answer from the context, say I dont know."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3
-        )
-        return response.choices[0].message.content
+    def stream(self, prompt: str, system: str = SYSTEM_PROMPT) -> Iterator[str]:
+        """Yield the completion for `prompt` as it is generated"""
+        if self.provider == "gemini":
+            model = self.client.GenerativeModel(self.model)
+            for chunk in model.generate_content(f"{system}\n\n{prompt}", stream=True):
+                yield chunk.text
+        else:  # openai and groq share the chat-completions API
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                stream=True
+            )
+            for event in stream:
+                if event.choices and event.choices[0].delta.content:
+                    yield event.choices[0].delta.content
     
     def _build_prompt(self, question: str, context: List[str]) -> str:
         context_text = "\n\n---\n\n".join(context)

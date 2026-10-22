@@ -118,7 +118,11 @@ async def on_startup():
     if vector_ready:
         try:
             Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["chunks"]])
-            logger.info("chunks table (pgvector) verified/created successfully")
+            with engine.connect() as conn:
+                # Full-text index for the keyword half of hybrid search; expression must match Retriever's
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chunks_content_fts ON chunks USING GIN (to_tsvector('english', content))"))
+                conn.commit()
+            logger.info("chunks table (pgvector + full-text index) verified/created successfully")
         except Exception:
             logger.exception("chunks table creation failed on startup")
 

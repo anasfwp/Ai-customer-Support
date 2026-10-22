@@ -63,8 +63,13 @@ export function useChat() {
   }, [historyQuery.data]);
 
   const sendMutation = useMutation({
-    mutationFn: (question: string) => chatApi.query(question, sessionId),
-    onMutate: (question) => {
+    mutationFn: ({ question, pendingId }: { question: string; pendingId: string }) =>
+      chatApi.stream(question, sessionId, (answer) =>
+        setMessages((prev) =>
+          prev.map((m) => (m.id === pendingId ? { ...m, content: answer } : m)),
+        ),
+      ),
+    onMutate: ({ question, pendingId }) => {
       const now = new Date().toISOString();
       const userMsg: Message = {
         id: `u-${Date.now()}`,
@@ -74,7 +79,7 @@ export function useChat() {
         createdAt: now,
       };
       const pendingMsg: Message = {
-        id: `a-${Date.now()}`,
+        id: pendingId,
         role: 'assistant',
         content: '',
         citations: [],
@@ -143,7 +148,7 @@ export function useChat() {
     sessionId,
     isLoadingHistory: historyQuery.isLoading,
     isSending: sendMutation.isPending,
-    send: sendMutation.mutate,
+    send: (question: string) => sendMutation.mutate({ question, pendingId: `a-${Date.now()}` }),
     newChat,
     setFeedback,
   };

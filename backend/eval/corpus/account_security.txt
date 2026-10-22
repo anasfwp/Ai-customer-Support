@@ -1,0 +1,28 @@
+Account Security
+
+Password Requirements
+Passwords must be at least 12 characters long and include an uppercase letter, a lowercase letter, and a number. You cannot reuse any of your last 5 passwords. Passwords never expire unless an admin turns on rotation.
+
+Two-Factor Authentication
+We strongly recommend enabling two-factor authentication (2FA) under Settings > Security. We support authenticator apps such as Google Authenticator and Authy, as well as hardware security keys using WebAuthn. SMS codes are not supported because they can be intercepted.
+
+Backup Codes
+When you enable 2FA you receive 10 single-use backup codes. Store them somewhere safe. If you lose your phone and your backup codes, support can restore access only after verifying your identity with a government ID, which takes up to 3 business days.
+
+Account Lockout
+After 5 failed sign-in attempts in a row, the account is locked for 15 minutes. Admins can unlock a member early from the Admin Console.
+
+Session Timeout
+Sessions on the web app end after 30 minutes of inactivity. Desktop and mobile apps stay signed in for up to 30 days. You can sign out of all devices at once from Settings > Security > Active Sessions.
+
+Single Sign-On
+Enterprise accounts can require single sign-on (SSO) through any SAML 2.0 provider, including Okta, Azure AD, and Google Workspace. When SSO is enforced, members cannot sign in with a password.
+
+Encryption
+All data is encrypted in transit with TLS 1.2 or higher and at rest with AES-256. Enterprise customers can bring their own encryption keys through AWS KMS.
+
+Suspicious Activity
+We email you when someone signs in from a new device or country. If you did not sign in, change your password immediately and review Active Sessions.
+
+Reporting a Vulnerability
+Security researchers can report vulnerabilities to security@company.com. We run a bug bounty program with rewards of up to $5,000 for critical issues and respond to every report within 2 business days.

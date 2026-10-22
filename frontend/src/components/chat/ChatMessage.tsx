@@ -84,7 +84,7 @@ export default function ChatMessage({ message, onFeedback }: ChatMessageProps) {
             )}
 
             {/* Content */}
-            {message.pending ? (
+            {message.pending && !message.content ? (
               <TypingIndicator />
             ) : (
               <div className="markdown-body text-sm text-slate-700 dark:text-slate-200">

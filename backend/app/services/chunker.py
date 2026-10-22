@@ -13,10 +13,13 @@ class Chunker:
         
         # Clean the text
         text = re.sub(r'\n+', '\n', text)  # Remove multiple newlines
-        text = re.sub(r'\s+', ' ', text)   # Normalize whitespace
-        
-        # Try to split by paragraphs first (better semantic chunks)
-        paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
+        text = re.sub(r'[^\S\n]+', ' ', text)  # Normalize whitespace but keep newlines, or paragraphs collapse into one chunk
+
+        # Try to split by paragraphs first (better semantic chunks); split any paragraph longer than a chunk into word windows
+        paragraphs = []
+        for p in text.split('\n'):
+            words = p.split()
+            paragraphs += [' '.join(words[i:i + self.chunk_size]) for i in range(0, len(words), self.chunk_size)]
         
         chunks = []
         current_chunk = []
@@ -35,10 +38,10 @@ class Chunker:
                     "metadata": chunk_metadata
                 })
                 
-                # Keep overlap: keep last few sentences
-                overlap_text = current_chunk[-1] if current_chunk else ""
-                current_chunk = [overlap_text] if overlap_text else []
-                current_length = len(overlap_text.split()) if overlap_text else 0
+                # Keep overlap: carry the last `overlap` words into the next chunk
+                overlap_words = chunk_text.split()[-self.overlap:]
+                current_chunk = [' '.join(overlap_words)]
+                current_length = len(overlap_words)
             
             current_chunk.append(paragraph)
             current_length += paragraph_length

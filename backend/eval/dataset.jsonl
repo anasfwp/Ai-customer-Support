@@ -1,0 +1,70 @@
+{"question": "How do I reset my password?", "evidence": "Click \"Forgot Password\" on the login page", "source": "sample_faq.txt"}
+{"question": "When is your support team available?", "evidence": "Monday-Friday, 9 AM - 5 PM EST", "source": "sample_faq.txt"}
+{"question": "Is there a discount for first-time customers?", "evidence": "10% discount for first-time customers", "source": "sample_faq.txt"}
+{"question": "Is it safe to enter my card details on your site?", "evidence": "industry-standard SSL encryption", "source": "sample_faq.txt"}
+{"question": "Can I get my money back on a digital download?", "evidence": "Digital products are non-refundable after download", "source": "sample_policy.txt"}
+{"question": "How long does it take to process a refund?", "evidence": "Allow 5-7 business days for processing", "source": "sample_policy.txt"}
+{"question": "Can I return something I bought on sale?", "evidence": "Sale items are final sale and cannot be refunded", "source": "sample_policy.txt"}
+{"question": "Will I get the shipping cost back if I return an item?", "evidence": "Shipping costs are non-refundable", "source": "sample_policy.txt"}
+{"question": "Are custom orders refundable?", "evidence": "Custom orders cannot be refunded", "source": "sample_policy.txt"}
+{"question": "Where does my refund money go?", "evidence": "issued to the original payment method", "source": "sample_policy.txt"}
+{"question": "How much does Expedited shipping cost?", "evidence": "Expedited arrives in 2 business days and costs $14.95", "source": "shipping_and_delivery.txt"}
+{"question": "What is the minimum order for free shipping?", "evidence": "Orders over $75 qualify for free Standard Ground shipping", "source": "shipping_and_delivery.txt"}
+{"question": "Do I get free shipping if I live in Hawaii?", "evidence": "does not apply to Alaska, Hawaii, or US territories", "source": "shipping_and_delivery.txt"}
+{"question": "Do customers in Germany have to pay customs fees on delivery?", "evidence": "Delivered Duty Paid (DDP)", "source": "shipping_and_delivery.txt"}
+{"question": "What is the daily cutoff time for same-day shipping?", "evidence": "Orders placed before 1 PM EST on a business day ship the same day", "source": "shipping_and_delivery.txt"}
+{"question": "Where is your warehouse located?", "evidence": "warehouse in Columbus, Ohio", "source": "shipping_and_delivery.txt"}
+{"question": "My package arrived broken. How long do I have to report it?", "evidence": "reported within 7 days of delivery", "source": "shipping_and_delivery.txt"}
+{"question": "Tracking says delivered but I don't have my package, what should I do?", "evidence": "wait 48 hours and check with neighbors", "source": "shipping_and_delivery.txt"}
+{"question": "Can I ship Overnight Priority to a PO box?", "evidence": "cannot ship to PO boxes using Overnight Priority", "source": "shipping_and_delivery.txt"}
+{"question": "Can you ship a 150Wh battery pack overseas?", "evidence": "Lithium battery packs over 100Wh cannot be shipped internationally", "source": "shipping_and_delivery.txt"}
+{"question": "How much is the Starter plan?", "evidence": "The Starter plan costs $19 per month", "source": "pricing_and_plans.txt"}
+{"question": "How many users are included in Starter?", "evidence": "includes 3 user seats", "source": "pricing_and_plans.txt"}
+{"question": "What does the Pro plan cost per person?", "evidence": "The Pro plan costs $49 per user per month", "source": "pricing_and_plans.txt"}
+{"question": "What is the minimum number of seats for Enterprise?", "evidence": "requires a minimum of 25 seats", "source": "pricing_and_plans.txt"}
+{"question": "What uptime guarantee do enterprise customers get?", "evidence": "99.95% uptime SLA", "source": "pricing_and_plans.txt"}
+{"question": "How much can I save by paying yearly?", "evidence": "Paying annually saves 20%", "source": "pricing_and_plans.txt"}
+{"question": "Do I need a credit card to try the product?", "evidence": "No credit card is required to start the trial", "source": "pricing_and_plans.txt"}
+{"question": "What happens to my account when the free trial is over?", "evidence": "the account is moved to the Starter plan", "source": "pricing_and_plans.txt"}
+{"question": "If I downgrade and I'm over my storage limit, what happens to my files?", "evidence": "data above the new storage limit becomes read-only", "source": "pricing_and_plans.txt"}
+{"question": "Can enterprise customers pay by invoice?", "evidence": "pay by invoice with Net 30 terms", "source": "pricing_and_plans.txt"}
+{"question": "Do I get a refund if I cancel my monthly subscription halfway through the month?", "evidence": "Monthly plans are not refunded for the partial month", "source": "pricing_and_plans.txt"}
+{"question": "Is there a discount for schools or charities?", "evidence": "receive 50% off the Pro plan", "source": "pricing_and_plans.txt"}
+{"question": "What does ERR-2003 mean?", "evidence": "ERR-2003: Sync Conflict", "source": "troubleshooting_error_codes.txt"}
+{"question": "I'm getting ERR-4012, how do I fix it?", "evidence": "ERR-4012: Session Token Expired", "source": "troubleshooting_error_codes.txt"}
+{"question": "What should I do about error ERR-5002?", "evidence": "ERR-5002: Payment Declined", "source": "troubleshooting_error_codes.txt"}
+{"question": "What causes ERR-1001?", "evidence": "ERR-1001: Network Unreachable", "source": "troubleshooting_error_codes.txt"}
+{"question": "Which port must our corporate firewall allow?", "evidence": "api.company.com on port 443", "source": "troubleshooting_error_codes.txt"}
+{"question": "What is the biggest file I can upload on the Pro plan?", "evidence": "cannot be larger than 5 GB on Starter or Pro", "source": "troubleshooting_error_codes.txt"}
+{"question": "Do files in the trash count against my storage quota?", "evidence": "Files in the trash still count toward your quota", "source": "troubleshooting_error_codes.txt"}
+{"question": "The desktop app won't open on my Windows PC, what can I do?", "evidence": "deleting the folder %APPDATA%\\CompanyCloud", "source": "troubleshooting_error_codes.txt"}
+{"question": "How do I export diagnostics logs for a support ticket?", "evidence": "Open Help > Export Diagnostics", "source": "troubleshooting_error_codes.txt"}
+{"question": "How long must my password be?", "evidence": "Passwords must be at least 12 characters long", "source": "account_security.txt"}
+{"question": "Can I use text message codes for two-factor authentication?", "evidence": "SMS codes are not supported", "source": "account_security.txt"}
+{"question": "How many backup codes do I get with 2FA?", "evidence": "10 single-use backup codes", "source": "account_security.txt"}
+{"question": "I typed my password wrong several times and now I'm locked out. How long until I can try again?", "evidence": "the account is locked for 15 minutes", "source": "account_security.txt"}
+{"question": "Which identity providers work with single sign-on?", "evidence": "Okta, Azure AD, and Google Workspace", "source": "account_security.txt"}
+{"question": "What encryption do you use for stored data?", "evidence": "at rest with AES-256", "source": "account_security.txt"}
+{"question": "How much does the bug bounty pay?", "evidence": "rewards of up to $5,000", "source": "account_security.txt"}
+{"question": "Can I see my API key again after I create it?", "evidence": "Each key is shown only once", "source": "api_and_integrations.txt"}
+{"question": "What is the base URL for the API?", "evidence": "https://api.company.com/v2", "source": "api_and_integrations.txt"}
+{"question": "What is the per-second request limit for the API?", "evidence": "10 requests per second per key", "source": "api_and_integrations.txt"}
+{"question": "What does the API return when I hit the rate limit?", "evidence": "returns HTTP 429 with a Retry-After header", "source": "api_and_integrations.txt"}
+{"question": "What is the maximum page size for list endpoints?", "evidence": "at most 500 items", "source": "api_and_integrations.txt"}
+{"question": "How do I verify that a webhook really came from you?", "evidence": "HMAC-SHA256 signature of the body", "source": "api_and_integrations.txt"}
+{"question": "How many times do you retry a failed webhook?", "evidence": "retry up to 5 times with exponential backoff", "source": "api_and_integrations.txt"}
+{"question": "Which plan do I need for the Salesforce integration?", "evidence": "The Salesforce integration requires the Enterprise plan", "source": "api_and_integrations.txt"}
+{"question": "How long is the hardware warranty?", "evidence": "1-year limited warranty from the date of delivery", "source": "warranty_and_repairs.txt"}
+{"question": "Does the warranty cover water damage?", "evidence": "It does not cover physical damage, water damage", "source": "warranty_and_repairs.txt"}
+{"question": "How long do I have to buy the Extended Protection Plan?", "evidence": "Extended Protection Plan within 60 days of purchase", "source": "warranty_and_repairs.txt"}
+{"question": "Where do I find my device's serial number?", "evidence": "printed on the bottom of the device", "source": "warranty_and_repairs.txt"}
+{"question": "How long do repairs take?", "evidence": "Repairs take 7-10 business days", "source": "warranty_and_repairs.txt"}
+{"question": "How much do you charge to look at a device that is out of warranty?", "evidence": "flat $79 diagnostic fee", "source": "warranty_and_repairs.txt"}
+{"question": "Will my data be kept when my device is repaired?", "evidence": "Devices are reset to factory settings during repair", "source": "warranty_and_repairs.txt"}
+{"question": "Do you use my files to train AI models?", "evidence": "We do not use the contents of your files to train machine learning models", "source": "privacy_and_data_retention.txt"}
+{"question": "Can our company keep its data in Europe?", "evidence": "EU data residency", "source": "privacy_and_data_retention.txt"}
+{"question": "How long can I restore deleted files?", "evidence": "Deleted files stay in the trash for 30 days", "source": "privacy_and_data_retention.txt"}
+{"question": "What happens to my files after I close my account?", "evidence": "your files are kept for 90 days", "source": "privacy_and_data_retention.txt"}
+{"question": "How long are billing records retained?", "evidence": "Billing records are kept for 7 years", "source": "privacy_and_data_retention.txt"}
+{"question": "Where do I send a GDPR deletion request?", "evidence": "privacy@company.com", "source": "privacy_and_data_retention.txt"}
+{"question": "What is the minimum age to use the service?", "evidence": "not intended for children under 16", "source": "privacy_and_data_retention.txt"}

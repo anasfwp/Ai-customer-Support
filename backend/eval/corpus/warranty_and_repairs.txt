@@ -1,0 +1,25 @@
+Warranty and Repairs
+
+Hardware Warranty
+All hardware products include a 1-year limited warranty from the date of delivery. The warranty covers manufacturing defects in materials and workmanship. It does not cover physical damage, water damage, normal wear, or damage caused by unauthorized repairs.
+
+Extended Protection Plan
+You can buy the Extended Protection Plan within 60 days of purchase. It extends coverage to 3 years in total and adds one accidental damage claim per year with a $49 service fee. The plan costs 15% of the product price.
+
+Starting a Warranty Claim
+To start a claim, go to Account > Orders, select the product, and click Request Repair. You will need the serial number, which is printed on the bottom of the device and shown under Settings > About. A support agent reviews each claim within 2 business days.
+
+Repair Process
+Approved repairs are handled at our service center. We email a prepaid shipping label; pack the device in its original box if possible. Repairs take 7-10 business days from the day the device arrives. If a device cannot be repaired, we replace it with the same or an equivalent model.
+
+Repairs Outside Warranty
+Out-of-warranty repairs cost a flat $79 diagnostic fee, which is credited toward the repair if you approve the quote. Quotes are valid for 30 days.
+
+Replacement Parts
+Chargers, cables, and cases can be ordered from the Parts store and ship within 1 business day. Batteries must be replaced by the service center because of shipping restrictions on lithium batteries.
+
+Data Before Repair
+Back up your data before sending a device for repair. Devices are reset to factory settings during repair and we cannot recover lost data.
+
+Warranty Transfer
+The warranty stays with the device if you sell or give it away. The new owner needs the original order number to make a claim. The Extended Protection Plan can be transferred once for free.

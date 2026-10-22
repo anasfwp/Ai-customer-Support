@@ -1,0 +1,31 @@
+Pricing and Subscription Plans
+
+Plan Overview
+The Company Cloud service is offered in three plans: Starter, Pro, and Enterprise. All plans include unlimited projects, SSL encryption, and email support.
+
+Starter Plan
+The Starter plan costs $19 per month and includes 3 user seats, 10 GB of storage, and 1,000 API calls per day. Starter customers receive support by email only, with a response time of 2 business days.
+
+Pro Plan
+The Pro plan costs $49 per user per month and includes 100 GB of storage per user and 50,000 API calls per day. Pro adds live chat support with a 4-hour response time, priority queueing, and access to the analytics dashboard.
+
+Enterprise Plan
+Enterprise pricing is custom and requires a minimum of 25 seats. Enterprise includes unlimited storage, single sign-on (SSO) with SAML, a dedicated account manager, a 99.95% uptime SLA, and 24/7 phone support with a 1-hour response time for critical issues.
+
+Annual Billing
+Paying annually saves 20% compared to monthly billing on the Starter and Pro plans. Annual plans are billed upfront for 12 months.
+
+Free Trial
+Every new account starts with a 14-day free trial of the Pro plan. No credit card is required to start the trial. When the trial ends, the account is moved to the Starter plan unless you choose a paid plan.
+
+Upgrades and Downgrades
+Upgrades take effect immediately and are prorated for the rest of the billing cycle. Downgrades take effect at the start of the next billing cycle. If you downgrade, data above the new storage limit becomes read-only until you delete files or upgrade again.
+
+Payment Methods
+We accept Visa, Mastercard, American Express, and PayPal. Enterprise customers can also pay by invoice with Net 30 terms or by ACH bank transfer.
+
+Cancellation
+You can cancel a subscription at any time from Settings > Billing. Monthly plans are not refunded for the partial month; access continues until the end of the current billing period. Annual plans canceled within the first 30 days receive a full refund.
+
+Nonprofit and Education Discounts
+Registered nonprofits and accredited schools receive 50% off the Pro plan. Apply by emailing billing@company.com with proof of status.

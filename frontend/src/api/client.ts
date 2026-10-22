@@ -27,15 +27,22 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
-      if (localStorage.getItem(TOKEN_KEY)) sessionNotice.flagExpired();
-      localStorage.removeItem(TOKEN_KEY);
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
-      }
+      handleUnauthorized();
     }
     return Promise.reject(error);
   },
 );
+
+/**
+ * Sign out and send the user to /login. Shared with fetch-based calls (streaming) that bypass axios.
+ */
+export function handleUnauthorized() {
+  if (localStorage.getItem(TOKEN_KEY)) sessionNotice.flagExpired();
+  localStorage.removeItem(TOKEN_KEY);
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login';
+  }
+}
 
 /**
  * Extract a human-readable message from an axios error.

@@ -1,0 +1,28 @@
+API and Integrations
+
+Getting an API Key
+Create API keys under Settings > Developer > API Keys. Each key is shown only once when it is created, so copy it right away. Keys can be scoped to read-only or read-write access. Admins can revoke any key at any time.
+
+Authentication
+Send the key in the Authorization header as a bearer token on every request. Requests without a valid key return HTTP 401. The base URL for all requests is https://api.company.com/v2.
+
+Rate Limits
+Rate limits depend on your plan: Starter allows 1,000 API calls per day, Pro allows 50,000 per day, and Enterprise is unlimited. In addition, every plan is limited to 10 requests per second per key. When you exceed a limit the API returns HTTP 429 with a Retry-After header telling you how many seconds to wait.
+
+Pagination
+List endpoints return 100 items per page by default and at most 500 items when you set the limit parameter. Use the next_cursor value from the response to fetch the next page.
+
+Webhooks
+Webhooks notify your server when events happen, such as file.created, file.deleted, or member.added. Each webhook request includes an X-Signature header, an HMAC-SHA256 signature of the body using your webhook secret, which you should verify. If your endpoint does not return a 2xx status, we retry up to 5 times with exponential backoff over 24 hours.
+
+SDKs
+Official SDKs are available for Python, JavaScript, and Go. The Python SDK can be installed with pip install companycloud.
+
+Integrations
+Native integrations are available for Slack, Microsoft Teams, Zapier, and Salesforce. Connect them from Settings > Integrations. The Salesforce integration requires the Enterprise plan.
+
+API Versioning
+The current API version is v2. Version v1 is deprecated and will be shut down on a date announced at least 12 months in advance. Breaking changes are only made in a new major version.
+
+API Status
+Check status.company.com for live API uptime and incident reports. You can subscribe to incident updates by email or RSS.
