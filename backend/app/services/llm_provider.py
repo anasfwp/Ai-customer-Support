@@ -1,8 +1,12 @@
 from openai import OpenAI
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from groq import Groq
 from app.config import settings
 from typing import Iterator, List
+import logging
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = "You are a helpful assistant. Answer based ONLY on the provided context. If you cannot answer from the context, say I dont know."
 
@@ -20,7 +24,8 @@ class LLMProvider:
                 raise ValueError("Gemini API key not configured or still using placeholder")
             genai.configure(api_key=settings.GEMINI_API_KEY)
             self.client = genai
-            self.model = "gemini-2.0-flash-exp"
+            self.models = [m.strip() for m in settings.GEMINI_MODEL.split(",") if m.strip()]
+            self.model = self.models[0]
         elif self.provider == "groq":
             if not settings.GROQ_API_KEY or settings.GROQ_API_KEY == "your_groq_key_here":
                 raise ValueError("Groq API key not configured or still using placeholder")
@@ -41,9 +46,7 @@ class LLMProvider:
     def stream(self, prompt: str, system: str = SYSTEM_PROMPT) -> Iterator[str]:
         """Yield the completion for `prompt` as it is generated"""
         if self.provider == "gemini":
-            model = self.client.GenerativeModel(self.model)
-            for chunk in model.generate_content(f"{system}\n\n{prompt}", stream=True):
-                yield chunk.text
+            yield from self._stream_gemini(prompt, system)
         else:  # openai and groq share the chat-completions API
             stream = self.client.chat.completions.create(
                 model=self.model,
@@ -58,6 +61,24 @@ class LLMProvider:
                 if event.choices and event.choices[0].delta.content:
                     yield event.choices[0].delta.content
     
+    def _stream_gemini(self, prompt: str, system: str) -> Iterator[str]:
+        """Stream from the first Gemini model that accepts the request; fall back while nothing has been yielded"""
+        for i, name in enumerate(self.models):
+            model = self.client.GenerativeModel(name, system_instruction=system)
+            started = False
+            try:
+                for chunk in model.generate_content(prompt, stream=True, generation_config={"temperature": 0.3}):
+                    # a chunk with no text parts (e.g. the final finish_reason chunk) raises on .text
+                    text = "".join(part.text for c in chunk.candidates for part in c.content.parts)
+                    if text:
+                        started = True
+                        yield text
+                return
+            except (ResourceExhausted, ServiceUnavailable):
+                if started or i == len(self.models) - 1:
+                    raise
+                logger.warning("Gemini model %s unavailable, falling back to %s", name, self.models[i + 1])
+
     def _build_prompt(self, question: str, context: List[str]) -> str:
         context_text = "\n\n---\n\n".join(context)
         return f"""Context information:

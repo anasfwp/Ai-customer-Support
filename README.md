@@ -40,9 +40,10 @@ Then open `backend/.env` and fill in your own values:
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | DB connection string. Defaults to local SQLite (`sqlite:///./knowledge.db`); use a Postgres URL (with `pgvector`) for production. |
-| `LLM_PROVIDER` | Which LLM provider to use: `openai`, `gemini`, or `groq`. |
+| `LLM_PROVIDER` | Which LLM provider to use: `gemini` (default), `openai`, or `groq`. Switching providers changes the embedding model, so re-upload your documents afterwards. |
 | `OPENAI_API_KEY` | Required if `LLM_PROVIDER=openai`. |
 | `GEMINI_API_KEY` | Required if `LLM_PROVIDER=gemini`. |
+| `GEMINI_MODEL` | Optional comma-separated chat models, tried in order (default `gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest`). |
 | `GROQ_API_KEY` | Required if `LLM_PROVIDER=groq`. |
 | `SECRET_KEY` | Secret used to sign auth tokens — generate a random string, don't reuse examples. |
 | `ALGORITHM` | JWT signing algorithm (default `HS256`). |

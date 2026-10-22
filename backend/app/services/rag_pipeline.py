@@ -46,7 +46,7 @@ class RAGPipeline:
         logger.info(f"Top similarities: {[(s[1], s[0].chunk_metadata.get('filename', 'unknown')) for s in similarities]}")
         
         # Order comes from the reranker; the cosine threshold still drops off-topic chunks
-        top_chunks = [(chunk, sim) for chunk, sim in similarities if sim > 0.2][:3]
+        top_chunks = [(chunk, sim) for chunk, sim in similarities if sim > self.embedding_service.min_similarity][:3]
         
         if not top_chunks:
             return {

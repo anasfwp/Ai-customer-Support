@@ -25,7 +25,7 @@ services:
       - key: MAX_UPLOAD_SIZE_MB
         value: "10"
       - key: LLM_PROVIDER
-        value: openai
+        value: gemini
       # Set these in the Render dashboard (Environment tab) - never commit
       # real keys to this file. Only the provider matching LLM_PROVIDER
       # needs a real value; the others can stay unset.

@@ -24,8 +24,8 @@ In the Render dashboard, open **ai-support-backend → Environment**, and set:
 
 | Key | Value |
 |---|---|
-| `OPENAI_API_KEY` | Your real OpenAI key (only needed if `LLM_PROVIDER=openai`, the default) |
-| `GEMINI_API_KEY` / `GROQ_API_KEY` | Only if you switch `LLM_PROVIDER` to `gemini` or `groq` |
+| `GEMINI_API_KEY` | Your real Gemini key (needed for `LLM_PROVIDER=gemini`, the default) |
+| `OPENAI_API_KEY` / `GROQ_API_KEY` | Only if you switch `LLM_PROVIDER` to `openai` or `groq` |
 
 `SECRET_KEY` and `DATABASE_URL` are already generated/wired automatically by the Blueprint — you don't need to touch them.
 

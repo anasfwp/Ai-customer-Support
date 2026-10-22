@@ -6,9 +6,11 @@ import json
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    LLM_PROVIDER: str = "openai"
+    LLM_PROVIDER: str = "gemini"
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    # Comma-separated: the first is used, the rest are fallbacks when it is overloaded or out of quota
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest"
     GROQ_API_KEY: Optional[str] = None
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
