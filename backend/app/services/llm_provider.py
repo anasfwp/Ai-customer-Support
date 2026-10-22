@@ -3,7 +3,7 @@ import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from groq import Groq
 from app.config import settings
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,10 @@ class LLMProvider:
             return
         yield from self.stream(self._build_prompt(question, context))
     
-    def stream(self, prompt: str, system: str = SYSTEM_PROMPT) -> Iterator[str]:
-        """Yield the completion for `prompt` as it is generated"""
+    def stream(self, prompt: str, system: str = SYSTEM_PROMPT, timeout: Optional[float] = None) -> Iterator[str]:
+        """Yield the completion for `prompt` as it is generated; `timeout` (seconds) bounds each request"""
         if self.provider == "gemini":
-            yield from self._stream_gemini(prompt, system)
+            yield from self._stream_gemini(prompt, system, timeout)
         else:  # openai and groq share the chat-completions API
             stream = self.client.chat.completions.create(
                 model=self.model,
@@ -55,19 +55,22 @@ class LLMProvider:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
-                stream=True
+                stream=True,
+                timeout=timeout
             )
             for event in stream:
                 if event.choices and event.choices[0].delta.content:
                     yield event.choices[0].delta.content
     
-    def _stream_gemini(self, prompt: str, system: str) -> Iterator[str]:
+    def _stream_gemini(self, prompt: str, system: str, timeout: Optional[float] = None) -> Iterator[str]:
         """Stream from the first Gemini model that accepts the request; fall back while nothing has been yielded"""
         for i, name in enumerate(self.models):
             model = self.client.GenerativeModel(name, system_instruction=system)
             started = False
             try:
-                for chunk in model.generate_content(prompt, stream=True, generation_config={"temperature": 0.3}):
+                # with a timeout, also drop the client's built-in retries so the deadline is real
+                request_options = {"timeout": timeout, "retry": None} if timeout else None
+                for chunk in model.generate_content(prompt, stream=True, generation_config={"temperature": 0.3}, request_options=request_options):
                     # a chunk with no text parts (e.g. the final finish_reason chunk) raises on .text
                     text = "".join(part.text for c in chunk.candidates for part in c.content.parts)
                     if text:

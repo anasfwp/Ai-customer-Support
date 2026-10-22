@@ -1,4 +1,4 @@
-"""Evaluate retrieval recall and answer faithfulness on eval/dataset.jsonl.
+"""Evaluate retrieval recall and answer faithfulness on eval/dataset.jsonl, and follow-up query rewriting on eval/followups.jsonl.
 
 Usage (from backend/):  python -m eval.run_eval --db-url postgresql://postgres:postgres@localhost:5433/support
 
@@ -24,6 +24,7 @@ from app.services.chunker import Chunker
 from app.services.document_parser import DocumentParser
 from app.services.embedding_service import EmbeddingService
 from app.services.rag_pipeline import RAGPipeline
+from app.services.query_rewriter import fallback_query, rewrite_query
 from app.services.retriever import Retriever
 
 HERE = Path(__file__).parent
@@ -95,7 +96,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--db-url", required=True, help="a dev/eval database; a throwaway tenant is created and removed")
     parser.add_argument("--k", type=int, default=5)
-    parser.add_argument("--skip-generation", action="store_true", help="retrieval metrics only (no LLM answer/judge calls)")
+    parser.add_argument("--skip-generation", action="store_true", help="skip answer generation and the faithfulness judge (LLM calls)")
+    parser.add_argument("--skip-followups", action="store_true", help="skip the follow-up query rewriting eval (LLM calls)")
     args = parser.parse_args()
 
     engine = create_engine(args.db_url)
@@ -125,6 +127,10 @@ def main():
             misses = [q["question"] for q, r in zip(dataset, ranks) if not r]
             print(f"{name}: recall@{args.k}={recall(args.k):.3f} mrr={mrr:.3f} misses={misses}")
 
+        followup_rows = None
+        if not args.skip_followups:
+            followup_rows = eval_followups(db, tenant_row.id, embeddings, args.k)
+
         faithfulness = answered = None
         if not args.skip_generation:
             pipeline = RAGPipeline()
@@ -141,7 +147,7 @@ def main():
             answered = n_answered / len(dataset)
             print(f"faithfulness={faithfulness:.3f} answered={answered:.3f}")
 
-        write_report(rows, faithfulness, answered, args.k, len(dataset), n_chunks, engine.dialect.name)
+        write_report(rows, faithfulness, answered, args.k, len(dataset), n_chunks, engine.dialect.name, followup_rows)
     finally:
         db.rollback()
         db.query(Chunk).filter(Chunk.tenant_id == tenant_row.id).delete()
@@ -150,7 +156,32 @@ def main():
         db.commit()
 
 
-def write_report(rows, faithfulness, answered, k, n_questions, n_chunks, backend):
+def eval_followups(db, tenant_id: str, embeddings, k: int):
+    """Retrieval for ambiguous follow-ups ("How long does it take?") under four ways of building the search"""
+    followups = [json.loads(line) for line in (HERE / "followups.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    llm = RAGPipeline().llm_provider
+    retriever = Retriever(embeddings)  # hybrid + rerank, as in production
+    # no timeout here: the eval measures the rewrite itself, not how fast the free tier is today
+    rewrites = [rewrite_query(llm, f["question"], f["history"], timeout=None) for f in followups]
+    for f, r in zip(followups, rewrites):
+        print(f"  rewrite: {f['question']!r} -> {r!r}")
+    setups = [
+        ("as asked (no rewriting)", lambda f, r: retriever.retrieve(db, tenant_id, f["question"], top_k=k)),
+        ("previous question + follow-up (fallback, no LLM)", lambda f, r: retriever.retrieve(
+            db, tenant_id, fallback_query(f["question"], f["history"]), top_k=k, extra_queries=[f["question"]])),
+        ("LLM rewrite (production)", lambda f, r: retriever.retrieve(db, tenant_id, r, top_k=k, extra_queries=[f["question"]])),
+    ]
+    rows = []
+    for name, search in setups:
+        ranks = [first_hit_rank(search(f, r), f["evidence"]) for f, r in zip(followups, rewrites)]
+        recall = lambda n: sum(1 for x in ranks if x and x <= n) / len(ranks)
+        mrr = sum(1 / x for x in ranks if x) / len(ranks)
+        rows.append((name, recall(1), recall(3), recall(k), mrr))
+        print(f"follow-ups, {name}: recall@1={recall(1):.3f} recall@{k}={recall(k):.3f} mrr={mrr:.3f}")
+    return len(followups), rows
+
+
+def write_report(rows, faithfulness, answered, k, n_questions, n_chunks, backend, followup_rows=None):
     lines = [
         "# RAG evaluation results", "",
         f"{date.today()} · {n_questions} questions · {n_chunks} chunks from eval/corpus · backend: {backend}", "",
@@ -161,6 +192,11 @@ def write_report(rows, faithfulness, answered, k, n_questions, n_chunks, backend
         lines += ["", "| Generation (hybrid + rerank) | Score |", "|---|---|",
                   f"| Faithfulness (LLM judge, supported claims / claims) | {faithfulness:.3f} |",
                   f"| Answered (not \"I don't know\") | {answered:.3f} |"]
+    if followup_rows is not None:
+        n_followups, frows = followup_rows
+        lines += ["", f"Follow-up questions ({n_followups} two-turn conversations, e.g. \"How long does it take?\" after asking about repairs), hybrid + rerank:", "",
+                  f"| Search query | Recall@1 | Recall@3 | Recall@{k} | MRR |", "|---|---|---|---|---|",
+                  *[f"| {name} | {r1:.3f} | {r3:.3f} | {rk:.3f} | {mrr:.3f} |" for name, r1, r3, rk, mrr in frows]]
     lines += ["", "Recall@k: share of questions whose evidence sentence is in a top-k chunk. "
               "MRR: mean of 1/rank of the first such chunk.", ""]
     (HERE / "results.md").write_text("\n".join(lines), encoding="utf-8")

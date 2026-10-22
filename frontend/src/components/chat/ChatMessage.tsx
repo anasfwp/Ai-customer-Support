@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { AlertTriangle, Bot, Copy } from 'lucide-react';
+import { AlertTriangle, Bot, Copy, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CitationBadge from './CitationBadge';
 import CitationModal from './CitationModal';
@@ -90,6 +90,16 @@ export default function ChatMessage({ message, onFeedback }: ChatMessageProps) {
               <div className="markdown-body text-sm text-slate-700 dark:text-slate-200">
                 <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
+            )}
+
+            {/* Follow-ups are rewritten into a standalone search; show what was actually searched */}
+            {!message.pending && message.searchQuery && (
+              <p className="mt-3 flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <Search className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                <span>
+                  Searched for: <span className="italic">{message.searchQuery}</span>
+                </span>
+              </p>
             )}
 
             {/* Citations */}

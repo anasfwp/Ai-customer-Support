@@ -76,6 +76,15 @@ npm run dev
 
 - App: http://localhost:5173
 
+## Follow-up questions (query rewriting)
+
+A follow-up like *"How long does it take?"* means nothing to a search engine on its own. When a conversation already has earlier turns, the LLM first rewrites the follow-up into a standalone query (*"How long does international shipping take?"*) from the last 3 turns, and the answer is generated from it too. The UI shows it as "Searched for: …".
+
+- The original wording is searched alongside the rewrite and the results are fused, so a poor rewrite can't hide what was actually asked.
+- If the rewrite fails or takes over 10 seconds, it falls back to *previous question + follow-up*, which needs no LLM call.
+- History comes only from the asking user's own turns in that conversation.
+- `QUERY_REWRITE` = `followups` (default), `always` or `off`. Measured on 16 ambiguous follow-ups (`backend/eval/followups.jsonl`, hybrid + rerank, Gemini): MRR 0.541 searching the follow-up as asked, 0.797 with the LLM rewrite, 0.875 with the previous-question fallback; the right chunk is in the top 5 for all 16 with either. Without the reranker the rewrite scores 0.906; the reranker demotes the right chunk on a few follow-ups.
+
 ## Teams and document permissions
 
 - Registering creates a new company with you as its **admin**. Admins add teammates in **Settings → Team**.

@@ -17,6 +17,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_QUESTION_LENGTH = 2000
+MAX_HISTORY_TURNS = 3  # earlier turns used to rewrite a follow-up question
 
 class ChatRequest(BaseModel):
     question: str
@@ -38,6 +39,7 @@ class ChatResponse(BaseModel):
     confidence: float = 0.0
     fallback: bool = False
     session_id: str
+    search_query: Optional[str] = None
     chat_log_id: Optional[str] = None
 
 def get_db():
@@ -64,6 +66,17 @@ def _save_chat_log(db: Session, tenant_id: str, user_id: str, question: str, res
     db.commit()
     return chat_log.id
 
+def _history(db: Session, user: User, session_id: Optional[str]) -> List[dict]:
+    """Earlier turns of this conversation, oldest first; only the user's own, so a guessed session id leaks nothing"""
+    if not session_id:
+        return []
+    from app.db.models.chat_log import ChatLog
+    logs = db.query(ChatLog).filter(
+        ChatLog.session_id == session_id,
+        ChatLog.user_id == user.id
+    ).order_by(ChatLog.created_at.desc()).limit(MAX_HISTORY_TURNS).all()
+    return [{"question": log.question, "answer": log.answer} for log in reversed(logs)]
+
 def _pipeline() -> RAGPipeline:
     try:
         return RAGPipeline()
@@ -86,7 +99,8 @@ async def query_question(
         db=db,
         tenant_id=current_user.tenant_id,
         question=chat_request.question,
-        document_ids=visible_document_ids(current_user)
+        document_ids=visible_document_ids(current_user),
+        history=_history(db, current_user, chat_request.session_id)
     )
     chat_log_id = _save_chat_log(db, current_user.tenant_id, current_user.id, chat_request.question, result, session_id)
     
@@ -96,7 +110,8 @@ async def query_question(
         confidence=result.get("confidence", 0.0),
         fallback=result.get("fallback", True),
         session_id=session_id,
-        chat_log_id=chat_log_id
+        chat_log_id=chat_log_id,
+        search_query=result.get("search_query")
     )
 
 def _sse(event: str, data: dict) -> str:
@@ -116,20 +131,20 @@ async def stream_question(
     tenant_id, user_id = current_user.tenant_id, current_user.id
     pipeline = _pipeline()
     try:
-        result = pipeline.retrieve(db, tenant_id, question, visible_document_ids(current_user))
+        result = pipeline.retrieve(db, tenant_id, question, visible_document_ids(current_user), _history(db, current_user, chat_request.session_id))
     except Exception:
         logger.exception("RAG retrieval error for tenant %s", tenant_id)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="I encountered an error processing your question. Please try again.")
     context = result.pop("context", None)
 
     def events():
-        yield _sse("meta", {"citations": result["citations"], "confidence": result["confidence"], "fallback": result["fallback"], "session_id": session_id})
+        yield _sse("meta", {"citations": result["citations"], "confidence": result["confidence"], "fallback": result["fallback"], "session_id": session_id, "search_query": result["search_query"]})
         try:
             if context is None:
                 yield _sse("token", {"text": result["answer"]})
             else:
                 parts = []
-                for token in pipeline.llm_provider.stream_answer(question, context):
+                for token in pipeline.llm_provider.stream_answer(result["search_query"] or question, context):
                     parts.append(token)
                     yield _sse("token", {"text": token})
                 result["answer"] = "".join(parts)

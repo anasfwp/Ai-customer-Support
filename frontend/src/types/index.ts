@@ -100,6 +100,8 @@ export interface ChatQueryResponse {
   session_id: string;
   chat_log_id?: string;
   id?: string;
+  /** the standalone query a follow-up was rewritten to; null when searched as asked */
+  search_query?: string | null;
 }
 
 export interface ChatHistoryItem {
@@ -122,6 +124,7 @@ export interface Message {
   fallback?: boolean;
   sessionId?: string;
   chatLogId?: string;
+  searchQuery?: string | null;
   createdAt: string;
   pending?: boolean;
   feedback?: 'helpful' | 'unhelpful' | null;

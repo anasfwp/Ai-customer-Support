@@ -103,6 +103,7 @@ export function useChat() {
                 fallback: data.fallback,
                 chatLogId: data.chat_log_id ?? data.id,
                 sessionId: data.session_id,
+                searchQuery: data.search_query,
               }
             : m,
         ),

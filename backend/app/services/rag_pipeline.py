@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 from app.services.llm_provider import LLMProvider
 from app.services.embedding_service import EmbeddingService
 from app.services.retriever import Retriever
-from typing import Dict
+from app.services.query_rewriter import rewrite_query
+from app.config import settings
+from typing import Dict, List, Optional
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -14,12 +16,12 @@ class RAGPipeline:
         self.llm_provider = LLMProvider()
         self.retriever = Retriever(self.embedding_service)
     
-    def answer_question(self, db: Session, tenant_id: str, question: str, document_ids=None) -> Dict:
+    def answer_question(self, db: Session, tenant_id: str, question: str, document_ids=None, history: Optional[List[Dict]] = None) -> Dict:
         """Process a question through the full RAG pipeline, searching only `document_ids` when given"""
         try:
-            result = self.retrieve(db, tenant_id, question, document_ids)
+            result = self.retrieve(db, tenant_id, question, document_ids, history)
             if "context" in result:
-                result["answer"] = self.llm_provider.generate_answer(question, result.pop("context"))
+                result["answer"] = self.llm_provider.generate_answer(result["search_query"] or question, result.pop("context"))
             return result
         except Exception as e:
             logger.error(f"RAG pipeline error for tenant {tenant_id}: {e}", exc_info=True)
@@ -30,9 +32,26 @@ class RAGPipeline:
                 "fallback": True
             }
     
-    def retrieve(self, db: Session, tenant_id: str, question: str, document_ids=None) -> Dict:
-        """Find the context for a question. Returns `context` to answer from, or a final fallback `answer`"""
-        similarities = self.retriever.retrieve(db, tenant_id, question, top_k=5, document_ids=document_ids)
+    def rewrite(self, question: str, history: Optional[List[Dict]]) -> str:
+        """The standalone search query for `question` (see QUERY_REWRITE); `history` is earlier {question, answer} turns"""
+        mode = settings.QUERY_REWRITE
+        if mode == "always" or (mode == "followups" and history):
+            return rewrite_query(self.llm_provider, question, history or [])
+        return question
+
+    def retrieve(self, db: Session, tenant_id: str, question: str, document_ids=None, history: Optional[List[Dict]] = None) -> Dict:
+        """Find the context for a question. Returns `context` to answer from, or a final fallback `answer`.
+
+        Always includes `search_query`: the rewritten standalone question, or None when it was searched as asked.
+        """
+        search_query = self.rewrite(question, history)
+        result = self._retrieve(db, tenant_id, search_query, question, document_ids)
+        result["search_query"] = search_query if search_query != question else None
+        return result
+
+    def _retrieve(self, db: Session, tenant_id: str, search_query: str, question: str, document_ids) -> Dict:
+        # The original wording is searched too, so a poor rewrite can't hide what the user actually asked for
+        similarities = self.retriever.retrieve(db, tenant_id, search_query, top_k=5, document_ids=document_ids, extra_queries=[question])
 
         if not similarities:
             return {

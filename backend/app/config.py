@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     # Comma-separated: the first is used, the rest are fallbacks when it is overloaded or out of quota
     GEMINI_MODEL: str = "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest"
     GROQ_API_KEY: Optional[str] = None
+    # Rewrite questions into standalone search queries with the LLM: "followups" (only when the
+    # conversation has earlier turns), "always", or "off"
+    QUERY_REWRITE: str = "followups"
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

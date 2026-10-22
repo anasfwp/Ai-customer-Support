@@ -22,16 +22,18 @@ class Retriever:
         self.hybrid = hybrid
         self.rerank = rerank
 
-    def retrieve(self, db: Session, tenant_id: str, query: str, top_k: int = 5, document_ids=None) -> Ranking:
+    def retrieve(self, db: Session, tenant_id: str, query: str, top_k: int = 5, document_ids=None, extra_queries=()) -> Ranking:
         """Return the top-k (chunk, cosine similarity) pairs: vector + keyword search, fused with RRF, then reranked.
 
         `document_ids` (ids or a SELECT of them, see app.core.permissions) limits the search to documents the user may see.
+        `extra_queries` are searched too and fused in (e.g. the user's original wording next to a rewritten `query`);
+        reranking always scores against `query`.
         """
-        query_embedding = self.embedding_service.embed_texts([query])[0]
-        if db.get_bind().dialect.name == "postgresql":
-            rankings = self._postgres_rankings(db, tenant_id, query, query_embedding, document_ids)
-        else:
-            rankings = self._python_rankings(db, tenant_id, query, query_embedding, document_ids)
+        queries = [query] + [q for q in dict.fromkeys(extra_queries) if q != query]
+        search = self._postgres_rankings if db.get_bind().dialect.name == "postgresql" else self._python_rankings
+        rankings = []
+        for q, embedding in zip(queries, self.embedding_service.embed_texts(queries)):
+            rankings += search(db, tenant_id, q, embedding, document_ids)
         candidates = reciprocal_rank_fusion(rankings)[:CANDIDATES]
         if self.rerank:
             candidates = rerank(query, candidates)
@@ -70,13 +72,14 @@ def _visible(query, document_ids):
 
 
 def reciprocal_rank_fusion(rankings: List[Ranking], k: int = 60) -> Ranking:
-    """Merge rankings by summing 1/(k + rank); rewards chunks that rank well in several lists"""
+    """Merge rankings by summing 1/(k + rank); rewards chunks that rank well in several lists. Keeps each chunk's best similarity"""
     scores: Dict[str, float] = {}
     pairs: Dict[str, Tuple[Chunk, float]] = {}
     for ranking in rankings:
         for rank, (chunk, sim) in enumerate(ranking):
             scores[chunk.id] = scores.get(chunk.id, 0.0) + 1.0 / (k + rank + 1)
-            pairs[chunk.id] = (chunk, sim)
+            if chunk.id not in pairs or sim > pairs[chunk.id][1]:
+                pairs[chunk.id] = (chunk, sim)
     return [pairs[chunk_id] for chunk_id in sorted(scores, key=scores.get, reverse=True)]
 
 
