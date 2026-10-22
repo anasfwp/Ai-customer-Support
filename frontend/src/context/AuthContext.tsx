@@ -5,6 +5,8 @@ import { sessionNotice, tokenStorage } from '../api/client';
 interface AuthUser {
   email: string;
   tenantId: string;
+  /** display only (shows admin controls); the API enforces it */
+  isAdmin: boolean;
 }
 
 interface AuthContextValue {
@@ -50,7 +52,7 @@ function userFromToken(token: string | null): AuthUser | null {
     sessionNotice.flagExpired();
     return null;
   }
-  return { email, tenantId };
+  return { email, tenantId, isAdmin: payload.is_admin === true };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

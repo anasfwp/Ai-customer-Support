@@ -14,10 +14,10 @@ class RAGPipeline:
         self.llm_provider = LLMProvider()
         self.retriever = Retriever(self.embedding_service)
     
-    def answer_question(self, db: Session, tenant_id: str, question: str) -> Dict:
-        """Process a question through the full RAG pipeline"""
+    def answer_question(self, db: Session, tenant_id: str, question: str, document_ids=None) -> Dict:
+        """Process a question through the full RAG pipeline, searching only `document_ids` when given"""
         try:
-            result = self.retrieve(db, tenant_id, question)
+            result = self.retrieve(db, tenant_id, question, document_ids)
             if "context" in result:
                 result["answer"] = self.llm_provider.generate_answer(question, result.pop("context"))
             return result
@@ -30,13 +30,13 @@ class RAGPipeline:
                 "fallback": True
             }
     
-    def retrieve(self, db: Session, tenant_id: str, question: str) -> Dict:
+    def retrieve(self, db: Session, tenant_id: str, question: str, document_ids=None) -> Dict:
         """Find the context for a question. Returns `context` to answer from, or a final fallback `answer`"""
-        similarities = self.retriever.retrieve(db, tenant_id, question, top_k=5)
+        similarities = self.retriever.retrieve(db, tenant_id, question, top_k=5, document_ids=document_ids)
 
         if not similarities:
             return {
-                "answer": "No documents have been uploaded and processed yet. Please upload a document first.",
+                "answer": "No documents you have access to have been uploaded and processed yet.",
                 "citations": [],
                 "confidence": 0.0,
                 "fallback": True

@@ -9,6 +9,7 @@ interface DocumentListProps {
   isLoading: boolean;
   deletingId: string | null;
   onDelete: (documentId: string) => void;
+  onShare: (document: Document) => void;
 }
 
 export default function DocumentList({
@@ -16,6 +17,7 @@ export default function DocumentList({
   isLoading,
   deletingId,
   onDelete,
+  onShare,
 }: DocumentListProps) {
   if (isLoading) {
     return (
@@ -60,6 +62,7 @@ export default function DocumentList({
             key={doc.id}
             document={doc}
             onDelete={onDelete}
+            onShare={onShare}
             isDeleting={deletingId === doc.id}
           />
         ))}

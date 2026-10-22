@@ -28,11 +28,27 @@ export interface User {
   is_admin: boolean;
 }
 
+export interface TeamMember {
+  id: string;
+  email: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
+export interface AddMemberRequest {
+  email: string;
+  password: string;
+  is_admin: boolean;
+}
+
 // ============================================================
 // DOCUMENTS
 // ============================================================
 
 export type DocumentStatus = 'processing' | 'ready' | 'failed';
+
+/** everyone: the whole company; restricted: only the owner, admins and `shared_with` users */
+export type DocumentVisibility = 'everyone' | 'restricted';
 
 export interface Document {
   id: string;
@@ -40,6 +56,17 @@ export interface Document {
   status: DocumentStatus;
   chunk_count: number;
   created_at: string;
+  visibility: DocumentVisibility;
+  owner_email: string | null;
+  /** whether the current user may change sharing or delete it */
+  can_manage: boolean;
+  /** user ids; only filled in when can_manage */
+  shared_with: string[];
+}
+
+export interface DocumentAccessUpdate {
+  visibility: DocumentVisibility;
+  user_ids: string[];
 }
 
 export interface DocumentUploadResponse {

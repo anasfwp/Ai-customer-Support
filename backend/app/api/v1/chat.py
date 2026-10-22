@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
 from app.core.deps import get_current_user
+from app.core.permissions import visible_document_ids
 from app.core.limiter import limiter
 from app.db.models.user import User
 from app.services.rag_pipeline import RAGPipeline
@@ -84,7 +85,8 @@ async def query_question(
     result = _pipeline().answer_question(
         db=db,
         tenant_id=current_user.tenant_id,
-        question=chat_request.question
+        question=chat_request.question,
+        document_ids=visible_document_ids(current_user)
     )
     chat_log_id = _save_chat_log(db, current_user.tenant_id, current_user.id, chat_request.question, result, session_id)
     
@@ -114,7 +116,7 @@ async def stream_question(
     tenant_id, user_id = current_user.tenant_id, current_user.id
     pipeline = _pipeline()
     try:
-        result = pipeline.retrieve(db, tenant_id, question)
+        result = pipeline.retrieve(db, tenant_id, question, visible_document_ids(current_user))
     except Exception:
         logger.exception("RAG retrieval error for tenant %s", tenant_id)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="I encountered an error processing your question. Please try again.")
@@ -156,7 +158,11 @@ async def get_chat_history(
     
     logs = db.query(ChatLog).filter(
         ChatLog.tenant_id == current_user.tenant_id
-    ).order_by(ChatLog.created_at.desc()).limit(limit).all()
+    )
+    if not current_user.is_admin:
+        # answers can quote restricted documents, so members only see their own questions
+        logs = logs.filter(ChatLog.user_id == current_user.id)
+    logs = logs.order_by(ChatLog.created_at.desc()).limit(limit).all()
     
     return [
         {

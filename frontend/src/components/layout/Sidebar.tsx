@@ -19,10 +19,10 @@ interface SidebarProps {
   onNewChat: () => void;
 }
 
-const navItems = [
+const navItems: { to: string; label: string; icon: typeof MessageSquare; adminOnly?: boolean }[] = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/documents', label: 'Documents', icon: FileText },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3, adminOnly: true },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -96,7 +96,7 @@ export default function Sidebar({ open, onClose, onNewChat }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {navItems.map((item) => (
+          {navItems.filter((item) => !item.adminOnly || user?.isAdmin).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -127,7 +127,7 @@ export default function Sidebar({ open, onClose, onNewChat }: SidebarProps) {
                 {user?.email ?? 'Unknown'}
               </p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                {user?.tenantId?.slice(0, 8) ?? ''}
+                {user ? (user.isAdmin ? 'Admin' : 'Member') : ''}
               </p>
             </div>
           </div>

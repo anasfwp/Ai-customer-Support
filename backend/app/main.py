@@ -7,7 +7,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api.v1 import auth, documents, chat, feedback, analytics
+from app.api.v1 import auth, documents, chat, feedback, analytics, users
 from app.core.limiter import limiter
 from app.db.base import Base, engine
 
@@ -76,6 +76,27 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return response
 
 
+# Columns added after their table first shipped; create_all never alters existing tables, so add them here
+_LATER_COLUMNS = {
+    "documents": {
+        "owner_id": "VARCHAR REFERENCES users(id)",
+        "visibility": "VARCHAR NOT NULL DEFAULT 'everyone'",
+    },
+}
+
+
+def _add_missing_columns():
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table, columns in _LATER_COLUMNS.items():
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
+                    logger.info("Added column %s.%s", table, name)
+
+
 @app.on_event("startup")
 async def on_startup():
     """Create tables (and the pgvector extension, if on Postgres) if they
@@ -110,6 +131,7 @@ async def on_startup():
     core_tables = [t for name, t in Base.metadata.tables.items() if name != "chunks"]
     try:
         Base.metadata.create_all(bind=engine, tables=core_tables)
+        _add_missing_columns()
         logger.info("Core database tables verified/created successfully")
     except Exception:
         logger.exception("Core database table creation failed on startup")
@@ -118,10 +140,11 @@ async def on_startup():
     if vector_ready:
         try:
             Base.metadata.create_all(bind=engine, tables=[Base.metadata.tables["chunks"]])
-            with engine.connect() as conn:
-                # Full-text index for the keyword half of hybrid search; expression must match Retriever's
-                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chunks_content_fts ON chunks USING GIN (to_tsvector('english', content))"))
-                conn.commit()
+            if engine.dialect.name == "postgresql":  # SQLite dev falls back to in-Python BM25
+                with engine.connect() as conn:
+                    # Full-text index for the keyword half of hybrid search; expression must match Retriever's
+                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chunks_content_fts ON chunks USING GIN (to_tsvector('english', content))"))
+                    conn.commit()
             logger.info("chunks table (pgvector + full-text index) verified/created successfully")
         except Exception:
             logger.exception("chunks table creation failed on startup")
@@ -133,6 +156,7 @@ app.include_router(documents.router, prefix="/api/v1/documents", tags=["document
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(feedback.router, prefix="/api/v1/feedback", tags=["feedback"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
 
 @app.get("/")

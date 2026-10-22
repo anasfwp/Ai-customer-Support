@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { documentsApi } from '../api/documents';
 import { errorMessage } from '../api/client';
+import type { DocumentAccessUpdate } from '../types';
 
 const DOCUMENTS_KEY = ['documents'] as const;
 
@@ -45,6 +46,18 @@ export function useDocuments() {
     },
   });
 
+  const accessMutation = useMutation({
+    mutationFn: ({ documentId, access }: { documentId: string; access: DocumentAccessUpdate }) =>
+      documentsApi.setAccess(documentId, access),
+    onSuccess: () => {
+      toast.success('Sharing updated');
+      queryClient.invalidateQueries({ queryKey: [...DOCUMENTS_KEY] });
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, 'Failed to update sharing'));
+    },
+  });
+
   return {
     documents: listQuery.data ?? [],
     isLoading: listQuery.isLoading,
@@ -54,5 +67,7 @@ export function useDocuments() {
     isUploading: uploadMutation.isPending,
     deleteDocument: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    setAccess: accessMutation.mutateAsync,
+    isSavingAccess: accessMutation.isPending,
   };
 }

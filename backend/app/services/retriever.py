@@ -22,21 +22,24 @@ class Retriever:
         self.hybrid = hybrid
         self.rerank = rerank
 
-    def retrieve(self, db: Session, tenant_id: str, query: str, top_k: int = 5) -> Ranking:
-        """Return the top-k (chunk, cosine similarity) pairs: vector + keyword search, fused with RRF, then reranked"""
+    def retrieve(self, db: Session, tenant_id: str, query: str, top_k: int = 5, document_ids=None) -> Ranking:
+        """Return the top-k (chunk, cosine similarity) pairs: vector + keyword search, fused with RRF, then reranked.
+
+        `document_ids` (ids or a SELECT of them, see app.core.permissions) limits the search to documents the user may see.
+        """
         query_embedding = self.embedding_service.embed_texts([query])[0]
         if db.get_bind().dialect.name == "postgresql":
-            rankings = self._postgres_rankings(db, tenant_id, query, query_embedding)
+            rankings = self._postgres_rankings(db, tenant_id, query, query_embedding, document_ids)
         else:
-            rankings = self._python_rankings(db, tenant_id, query, query_embedding)
+            rankings = self._python_rankings(db, tenant_id, query, query_embedding, document_ids)
         candidates = reciprocal_rank_fusion(rankings)[:CANDIDATES]
         if self.rerank:
             candidates = rerank(query, candidates)
         return candidates[:top_k]
 
-    def _postgres_rankings(self, db: Session, tenant_id: str, query: str, query_embedding: List[float]) -> List[Ranking]:
+    def _postgres_rankings(self, db: Session, tenant_id: str, query: str, query_embedding: List[float], document_ids) -> List[Ranking]:
         distance = Chunk.embedding.cosine_distance(query_embedding)
-        base = db.query(Chunk, distance).filter(Chunk.tenant_id == tenant_id, Chunk.embedding.isnot(None))
+        base = _visible(db.query(Chunk, distance).filter(Chunk.tenant_id == tenant_id, Chunk.embedding.isnot(None)), document_ids)
         rankings = [base.order_by(distance).limit(CANDIDATES).all()]
         if self.hybrid:
             # Must match the GIN index expression created on startup
@@ -46,11 +49,11 @@ class Retriever:
             rankings.append(base.filter(tsv.op("@@")(tsq)).order_by(func.ts_rank_cd(tsv, tsq).desc()).limit(CANDIDATES).all())
         return [[(chunk, 1.0 - float(dist)) for chunk, dist in ranking] for ranking in rankings]
 
-    def _python_rankings(self, db: Session, tenant_id: str, query: str, query_embedding: List[float]) -> List[Ranking]:
+    def _python_rankings(self, db: Session, tenant_id: str, query: str, query_embedding: List[float], document_ids) -> List[Ranking]:
         # shortcut: loads every tenant chunk into memory, only for local SQLite dev; run Postgres locally to drop this
         q = np.array(query_embedding)
         scored = []
-        for chunk in db.query(Chunk).filter(Chunk.tenant_id == tenant_id, Chunk.embedding.isnot(None)).all():
+        for chunk in _visible(db.query(Chunk).filter(Chunk.tenant_id == tenant_id, Chunk.embedding.isnot(None)), document_ids).all():
             c = np.array(chunk.embedding)
             norm = np.linalg.norm(q) * np.linalg.norm(c)
             if norm > 0:
@@ -60,6 +63,10 @@ class Retriever:
             keyword = sorted(zip(scored, bm25(query, [chunk.content for chunk, _ in scored])), key=lambda x: x[1], reverse=True)
             rankings.append([pair for pair, score in keyword if score > 0][:CANDIDATES])
         return rankings
+
+
+def _visible(query, document_ids):
+    return query if document_ids is None else query.filter(Chunk.document_id.in_(document_ids))
 
 
 def reciprocal_rank_fusion(rankings: List[Ranking], k: int = 60) -> Ranking:

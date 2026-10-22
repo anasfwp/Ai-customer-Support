@@ -78,7 +78,7 @@ async def register(request: Request, user_data: UserRegister, db: Session = Depe
 
     # Generate token
     access_token = create_access_token(
-        data={"sub": user.email, "tenant_id": tenant.id}
+        data={"sub": user.email, "tenant_id": tenant.id, "is_admin": user.is_admin}
     )
 
     return {
@@ -102,7 +102,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         )
 
     access_token = create_access_token(
-        data={"sub": user.email, "tenant_id": user.tenant_id}
+        data={"sub": user.email, "tenant_id": user.tenant_id, "is_admin": user.is_admin}
     )
 
     return {

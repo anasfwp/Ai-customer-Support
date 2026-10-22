@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Building2, Lock, Mail, Palette, Save, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../components/layout/Layout';
+import TeamSection from '../components/settings/TeamSection';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
@@ -68,6 +69,8 @@ export default function SettingsPage() {
             />
           </div>
         </section>
+
+        {user?.isAdmin && <TeamSection />}
 
         {/* Password */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">

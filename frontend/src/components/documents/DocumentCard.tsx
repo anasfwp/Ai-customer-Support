@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FileText, Loader2, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileText, Loader2, Trash2, AlertCircle, CheckCircle2, Lock, Share2, Users } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { Document } from '../../types';
 import { formatRelative } from '../../utils/formatDate';
@@ -8,14 +8,17 @@ import { cn } from '../../utils/cn';
 interface DocumentCardProps {
   document: Document;
   onDelete: (documentId: string) => void;
+  onShare: (document: Document) => void;
   isDeleting?: boolean;
 }
 
 export default function DocumentCard({
   document,
   onDelete,
+  onShare,
   isDeleting,
 }: DocumentCardProps) {
+  const restricted = document.visibility === 'restricted';
   const statusConfig = {
     processing: {
       badge: 'warning' as const,
@@ -73,15 +76,44 @@ export default function DocumentCard({
           </span>
           <span className="text-slate-300 dark:text-slate-700">·</span>
           <span>{formatRelative(document.created_at)}</span>
+          {document.owner_email && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">·</span>
+              <span className="truncate">by {document.owner_email}</span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Status badge */}
+      {/* Visibility + status badges */}
+      <Badge
+        variant={restricted ? 'warning' : 'default'}
+        title={
+          restricted
+            ? `Only ${document.can_manage ? `${document.shared_with.length} shared ${document.shared_with.length === 1 ? 'person' : 'people'}, ` : 'shared people, '}the owner and admins`
+            : 'Everyone in your company'
+        }
+      >
+        {restricted ? <Lock className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+        <span className="hidden sm:inline">{restricted ? 'Restricted' : 'Everyone'}</span>
+      </Badge>
       <Badge variant={config.badge} className="hidden sm:inline-flex">
         {config.label}
       </Badge>
 
+      {document.can_manage && (
+        <button
+          type="button"
+          onClick={() => onShare(document)}
+          aria-label={`Share ${document.filename}`}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+      )}
+
       {/* Delete */}
+      {document.can_manage && (
       <button
         type="button"
         onClick={() => onDelete(document.id)}
@@ -99,6 +131,7 @@ export default function DocumentCard({
           <Trash2 className="h-4 w-4" />
         )}
       </button>
+      )}
     </motion.div>
   );
 }

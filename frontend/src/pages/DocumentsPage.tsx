@@ -3,7 +3,9 @@ import { RefreshCw } from 'lucide-react';
 import Layout from '../components/layout/Layout';
 import DocumentUpload from '../components/documents/DocumentUpload';
 import DocumentList from '../components/documents/DocumentList';
+import ShareModal from '../components/documents/ShareModal';
 import { useDocuments } from '../hooks/useDocuments';
+import type { Document } from '../types';
 
 export default function DocumentsPage() {
   const {
@@ -13,9 +15,12 @@ export default function DocumentsPage() {
     upload,
     isUploading,
     deleteDocument,
+    setAccess,
+    isSavingAccess,
   } = useDocuments();
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sharing, setSharing] = useState<Document | null>(null);
 
   const handleDelete = async (documentId: string) => {
     if (!confirm('Delete this document and all its indexed chunks?')) return;
@@ -41,7 +46,7 @@ export default function DocumentsPage() {
               Documents
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Upload and manage the knowledge base for your workspace.
+              Upload and manage the knowledge base for your workspace. New documents are visible to everyone in your company until you restrict them.
             </p>
           </div>
           <button
@@ -81,8 +86,20 @@ export default function DocumentsPage() {
             isLoading={isLoading}
             deletingId={deletingId}
             onDelete={handleDelete}
+            onShare={setSharing}
           />
         </section>
+
+        <ShareModal
+          document={sharing}
+          isSaving={isSavingAccess}
+          onClose={() => setSharing(null)}
+          onSave={async (access) => {
+            if (!sharing) return;
+            await setAccess({ documentId: sharing.id, access });
+            setSharing(null);
+          }}
+        />
       </div>
     </Layout>
   );

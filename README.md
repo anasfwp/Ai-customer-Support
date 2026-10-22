@@ -76,6 +76,12 @@ npm run dev
 
 - App: http://localhost:5173
 
+## Teams and document permissions
+
+- Registering creates a new company with you as its **admin**. Admins add teammates in **Settings → Team**.
+- Each document is visible to **everyone in the company** (the default) or **only specific people**. Its uploader and the company's admins can always see it, and only they can change its sharing or delete it.
+- The check runs inside retrieval itself (`app/core/permissions.py`), so a restricted document's text can never reach another user's answer or citations. Members see only their own chat history; admins see everyone's, plus analytics.
+
 ## Deploying to Render
 
 See [`DEPLOY.md`](./DEPLOY.md) for a step-by-step guide to deploying the backend, frontend, and a managed Postgres database using the included `render.yaml` Blueprint.

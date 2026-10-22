@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Document, DocumentUploadResponse } from '../types';
+import type { Document, DocumentAccessUpdate, DocumentUploadResponse } from '../types';
 
 export const documentsApi = {
   /**
@@ -41,5 +41,13 @@ export const documentsApi = {
    */
   delete: async (documentId: string): Promise<void> => {
     await apiClient.delete(`/api/v1/documents/${documentId}`);
+  },
+
+  /**
+   * Set who can see a document (owner or admin only).
+   */
+  setAccess: async (documentId: string, access: DocumentAccessUpdate): Promise<Document> => {
+    const response = await apiClient.put<Document>(`/api/v1/documents/${documentId}/access`, access);
+    return response.data;
   },
 };
